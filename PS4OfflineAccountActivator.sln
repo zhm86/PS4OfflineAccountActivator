@@ -5,8 +5,6 @@ VisualStudioVersion = 16.0.29521.150
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PS4OfflineAccountActivator", "PS4OfflineAccountActivator.csproj", "{2FBA272A-CAEC-4C13-9A30-AF318445EF8C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "libdebug", "ps4debug\libdebug\csharp\libdebug.csproj", "{A2E25459-1CEB-4D75-82F7-F85874279DA1}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
