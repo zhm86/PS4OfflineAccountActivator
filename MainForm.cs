@@ -156,36 +156,50 @@ namespace PS4OfflineAccountActivator
 
                 ProcessList pl = ps4.GetProcessList();
 
-                p = pl.FindProcess("SceShellUI");
+                p = pl.FindProcess("eboot.bin");
 
                 ProcessMap pi = ps4.GetProcessMaps(p.pid);
-                executable = 0;
-                for (int i = 0; i < pi.entries.Length; i++)
-                {
-                    MemoryEntry me = pi.entries[i];
-                    if (me.prot == 5)
-                    {
-                        Console.WriteLine("executable base " + me.start.ToString("X"));
-                        executable = me.start;
-                        break;
-                    }
-                }
+
 
                 stub = ps4.InstallRPC(p.pid);
 
-                sceRegMgrGetInt_addr = executable + 0x809680;
-                sceRegMgrGetStr_addr = executable + 0x808EC0;
-                sceRegMgrGetBin_addr = executable + 0x80AA40;
-
-                sceRegMgrSetInt_addr = executable + 0x80B3C0;
-                sceRegMgrSetStr_addr = executable + 0x80F5B0;
-                sceRegMgrSetBin_addr = executable + 0x80AA50;
 
 
                 if (ps4.IsConnected)
                 {
                     toolStripStatusLabel1.Text = "Connected to " + tbIPAddress.Text + ". Click Get Users";
-                    btGetUsers.Enabled = true;
+                    //btGetUsers.Enabled = true;
+                    string folderPath = "";
+                    FolderBrowserDialog fbd = new FolderBrowserDialog();
+                    
+                    if (fbd.ShowDialog() == DialogResult.OK)
+                    {
+                        folderPath = fbd.SelectedPath;
+                    }
+                    
+                    if (string.IsNullOrEmpty(folderPath))
+                        return;
+                    
+                    ulong ptr = 0x100F720260; // 1.30 campaign
+                    
+                    byte[] pointerBuffer = ps4.ReadMemory(p.pid, ptr, 0x20000); // reading as block is faster than individual read calls
+                    
+                    for (int i = 0; i < pointerBuffer.Length; i += 0x18) // interate over the lua pool, each asset header is 0x18 bytes
+                    {
+                        byte[] hash = new byte[8];
+                        Buffer.BlockCopy(pointerBuffer, i, hash, 0, 8); // hash is at offset 0x00
+                    
+                        if (BitConverter.ToUInt64(hash, 0) < 0xFFFFFFFFFFFF)
+                            break;
+                    
+                        int size = BitConverter.ToInt32(pointerBuffer, i + 0x08); // file size is at offset 0x08 (for compressed files this is the compressed size)
+                        ulong filePtr = BitConverter.ToUInt64(pointerBuffer, i + 0x10); // pointer to the file buffer is at offset 0x10
+                    
+                        byte[] fileDump = ps4.ReadMemory(p.pid, filePtr, size);
+                    
+                    
+                        File.WriteAllBytes($@"{folderPath}\{BitConverter.ToString(hash).Replace("-", ""):X16}.lua", fileDump);
+                    }
                 }
 
             }
